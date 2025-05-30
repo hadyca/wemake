@@ -1,11 +1,13 @@
 import { DateTime } from "luxon";
-import type { Route } from "./+types/yearly-leaderboard-page";
 import { data, isRouteErrorResponse, Link } from "react-router";
 import { z } from "zod";
 import { Hero } from "~/common/components/hero";
 import { ProductCard } from "../components/product-card";
 import { Button } from "~/common/components/ui/button";
 import ProductPagination from "~/common/components/product-pagination";
+import { getProductPagesByDateRange, getProductsByDateRange } from "../queries";
+import { makeSSRClient } from "~/supa-client";
+import type { Route } from "./+types/yearly-leaderboard-page";
 
 const paramsSchema = z.object({
   year: z.coerce.number(),
@@ -26,7 +28,7 @@ export const meta: Route.MetaFunction = ({ params }) => {
   ];
 };
 
-export const loader = ({ params }: Route.LoaderArgs) => {
+export const loader = async ({ params, request }: Route.LoaderArgs) => {
   const { success, data: parsedData } = paramsSchema.safeParse(params);
   if (!success) {
     throw data(
@@ -61,7 +63,22 @@ export const loader = ({ params }: Route.LoaderArgs) => {
       { status: 400 }
     );
   }
+  const url = new URL(request.url);
+  const { client, headers } = makeSSRClient(request);
+  const products = await getProductsByDateRange(client, {
+    startDate: date.startOf("year"),
+    endDate: date.endOf("year"),
+    limit: 15,
+    page: Number(url.searchParams.get("page") || 1),
+  });
+
+  const totalPages = await getProductPagesByDateRange(client, {
+    startDate: date.startOf("year"),
+    endDate: date.endOf("year"),
+  });
   return {
+    products,
+    totalPages,
     ...parsedData,
   };
 };
@@ -103,19 +120,19 @@ export default function YearlyLeaderboardPage({
         ) : null}
       </div>
       <div className="space-y-5 w-full max-w-screen-md mx-auto">
-        {Array.from({ length: 11 }).map((_, index) => (
+        {loaderData.products.map((product) => (
           <ProductCard
-            key={`productId-${index}`}
-            id={`productId-${index}`}
-            name="Product Name"
-            description="Product Description"
-            commentsCount={12}
-            viewsCount={12}
-            votesCount={120}
+            key={product.product_id}
+            id={product.product_id.toString()}
+            name={product.name}
+            description={product.tagline}
+            reviewsCount={product.reviews}
+            viewsCount={product.views}
+            votesCount={product.upvotes}
           />
         ))}
       </div>
-      <ProductPagination totalPages={10} />
+      <ProductPagination totalPages={loaderData.totalPages} />
     </div>
   );
 }

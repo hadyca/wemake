@@ -87,8 +87,8 @@ const menus = [
         to: "/jobs?type=internship",
       },
       {
-        name: "Submit a Job",
-        description: "Submit a job to our community",
+        name: "Post a Job",
+        description: "Post a job to our community",
         to: "/jobs/submit",
       },
     ],
@@ -115,7 +115,7 @@ const menus = [
       {
         name: "Create a Post",
         description: "Create a post in our community",
-        to: "/community/create",
+        to: "/community/submit",
       },
     ],
   },
@@ -145,10 +145,16 @@ export default function Navigation({
   isLoggedIn,
   hasNotifications,
   hasMessages,
+  username,
+  avatar,
+  name,
 }: {
   isLoggedIn: boolean;
   hasNotifications: boolean;
   hasMessages: boolean;
+  username?: string;
+  avatar?: string | null;
+  name?: string;
 }) {
   return (
     <nav className="flex px-20 h-16 items-center justify-between backdrop-blur fixed top-0 left-0 right-0 z-50 bg-background/50">
@@ -178,7 +184,7 @@ export default function Navigation({
                                 "col-span-2 bg-primary/10 hover:bg-primary/20 focus:bg-primary/20",
                             ])}
                           >
-                            <NavigationMenuLink>
+                            <NavigationMenuLink asChild>
                               <Link
                                 className="p-3 space-y-1 block leading-none no-underline outline-none"
                                 to={item.to}
@@ -226,15 +232,20 @@ export default function Navigation({
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Avatar>
-                <AvatarImage src="https://github.com/serranoarevalo.png" />
-                <AvatarFallback>N</AvatarFallback>
+              <Avatar className="cursor-pointer">
+                {avatar ? (
+                  <AvatarImage src={avatar} />
+                ) : (
+                  <AvatarFallback>{name?.[0]}</AvatarFallback>
+                )}
               </Avatar>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56">
               <DropdownMenuLabel className="flex flex-col">
-                <span className="font-medium">John Doe</span>
-                <span className="text-xs text-muted-foreground">@username</span>
+                <span className="font-medium">{name}</span>
+                <span className="text-xs text-muted-foreground">
+                  @{username}
+                </span>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuGroup>
